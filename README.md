@@ -1,97 +1,158 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# ZIM - Khoảnh Khắc Đáng Nhớ (Memorable Moments)
 
-# Getting Started
+Component **React Native CLI** tái hiện section **"Khoảnh khắc đáng nhớ"** của [zim.vn](https://zim.vn) dưới dạng Carousel Cover Flow tương tác trên Mobile.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 📋 Yêu cầu hệ thống
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+| Công cụ          | Phiên bản tối thiểu |
+|------------------|---------------------|
+| Node.js          | >= 22.11.0          |
+| React Native     | 0.85.x              |
+| Xcode (iOS)      | >= 15.0             |
+| Android Studio   | >= Hedgehog         |
+| JDK              | 17+                 |
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+---
 
-```sh
-# Using npm
+## 🚀 Cài đặt
+
+```bash
+# 1. Cài dependencies (Package Manager: npm)
+npm install
+
+# 2. iOS — cài CocoaPods pods
+cd ios && pod install && cd ..
+```
+
+---
+
+## ▶️ Chạy ứng dụng
+
+### Khởi động Metro Bundler
+
+```bash
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Build and run your app
+> Nếu muốn xoá cache Metro (khuyến nghị lần đầu sau khi pull code):
+> ```bash
+> npm start -- --reset-cache
+> ```
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### Chạy trên iOS Simulator
 
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+```bash
+npx react-native run-ios
 ```
 
-### iOS
+> Chỉ định device cụ thể:
+> ```bash
+> npx react-native run-ios --simulator="iPhone 15 Pro"
+> ```
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+### Chạy trên Android Emulator / Device
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```bash
+npx react-native run-android
 ```
 
-Then, and every time you update your native dependencies, run:
+> Chỉ định device ID (lấy từ `adb devices`):
+> ```bash
+> npx react-native run-android --deviceId="emulator-5554"
+> ```
 
-```sh
-bundle exec pod install
+> **Lưu ý:** Đảm bảo Android Emulator đang chạy hoặc thiết bị thật đã bật USB Debugging trước khi chạy lệnh.
+
+---
+
+## 🗂️ Cấu trúc dự án
+
+```
+zim/
+├── App.tsx                                   # Entry point — setup SafeAreaProvider + StatusBar
+├── index.js                                  # React Native entry registration
+├── src/
+│   ├── data/
+│   │   └── mockData.ts                       # Dữ liệu giả lập (StoryData[])
+│   ├── lib/
+│   │   └── constant.ts                       # Hằng số dùng chung (ITEM_WIDTH, SNAP_INTERVAL…)
+│   ├── screens/
+│   │   └── Home/
+│   │       ├── HomeScreen.tsx                # Màn hình chính — layout Header + Carousel + Footer
+│   │       └── styles.ts                     # Styles của HomeScreen
+│   └── components/
+│       ├── MemorableMoments/
+│       │   ├── index.tsx                     # Component cha — FlatList Carousel + Pagination Dots
+│       │   └── styles.ts                     # Styles của MemorableMoments
+│       └── StoryItem/
+│           ├── index.tsx                     # Component con — Scale Cover Flow + Reveal Overlay
+│           └── styles.ts                     # Styles của StoryItem
+└── README.md
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+---
 
-```sh
-# Using npm
-npm run ios
+## 🎨 Tính năng
 
-# OR using Yarn
-yarn ios
-```
+### Carousel Cover Flow
+- Item ở giữa **to** (scale = 1.0), item hai bên **nhỏ hơn** (scale ≈ 0.82).
+- Vuốt ngang để chuyển story, snap từng item mượt mà.
+- Pagination dots ở dưới — dot active kéo rộng bằng `scaleX` (không dùng `width` để tránh reflow).
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+### Reveal Overlay (Tương tác 2 bước)
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+| Trạng thái   | Hành động                                                         |
+|--------------|-------------------------------------------------------------------|
+| Chưa chạm    | Overlay ẩn (`opacity: 0`)                                         |
+| Lần chạm 1   | Overlay hiện ra: tiêu đề + mô tả + nút CTA (`opacity: 0 → 1`)    |
+| Lần chạm 2   | Log console điều hướng + reset overlay về `opacity: 0`           |
 
-## Step 3: Modify your app
+### Accessibility
+- Lắng nghe `AccessibilityInfo.isReduceMotionEnabled()` realtime.
+- Khi bật **Reduce Motion** trong Settings → mọi animation `duration` tự động về **0ms**.
+- `accessibilityRole`, `accessibilityLabel`, `accessibilityHint` đầy đủ trên mọi element tương tác.
+- Contrast ratio text/background ≥ **10.5:1** (vượt chuẩn WCAG AAA 7:1).
 
-Now that you have successfully run the app, let's make changes!
+---
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## ⚡ Lý do chọn giải pháp: FlatList + useNativeDriver + opacity/transform
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+> **Giải thích kỹ thuật (dành cho reviewer):**
+>
+> React Native hoạt động trên hai thread song song: **JavaScript thread** xử lý logic ứng dụng và **UI thread (Native)** chịu trách nhiệm render và vẽ frame.
+>
+> ### 1. Tại sao dùng `useNativeDriver: true` cho TẤT CẢ animation?
+> Khi bật `useNativeDriver: true`, các giá trị animation như `opacity` và `transform` được serialized và giao toàn quyền điều khiển cho UI thread — **bỏ qua hoàn toàn JS bridge**. Dù JS thread đang bận xử lý logic khác (fetch API, state update), animation vẫn chạy mượt **60fps** vì không cần chờ JS frame.
+>
+> Ngược lại, animate `width`, `height`, `left`, `right` — thuộc tính ảnh hưởng layout — sẽ trigger layout engine (reflow) trên mỗi frame, **không tương thích** với `useNativeDriver` và gây jank.
+>
+> ### 2. Tại sao dùng `FlatList` + `Animated.event` thay vì `PanResponder`?
+> `Animated.event` với `useNativeDriver: true` cho phép map trực tiếp `nativeEvent.contentOffset.x` vào `scrollX` (Animated.Value) **hoàn toàn trên UI thread**, không routing qua JS bridge. Toàn bộ hiệu ứng scale Cover Flow được tính toán và áp dụng ở tầng Native — đây là kiến trúc **zero-JS-bridge** cho animation scroll.
+>
+> Dùng `FlatList` thay vì tự viết `PanResponder` giúp tận dụng Native scroll physics (momentum, snap) tối ưu trên từng platform mà không cần tái triển khai.
+>
+> ### 3. Tại sao chỉ dùng `opacity` cho overlay reveal?
+> `opacity` là một trong số ít thuộc tính được Native Animated hỗ trợ hoàn toàn. Dùng `opacity` để fade-in overlay thay vì `height` hay `top` đảm bảo animation không trigger reflow, chạy 60fps trên cả iOS và Android.
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+---
 
-## Congratulations! :tada:
+## 🛠️ Công nghệ sử dụng
 
-You've successfully run and modified your React Native App. :partying_face:
+| Công nghệ                          | Lý do chọn                                                    |
+|------------------------------------|---------------------------------------------------------------|
+| **React Native CLI** (không Expo)  | Kiểm soát hoàn toàn native layer, không overhead từ Expo SDK  |
+| **TypeScript** strict mode         | Type safety, phát hiện lỗi sớm ở compile time                 |
+| **Animated API** (RN native)       | Không cần Reanimated, đủ mạnh cho yêu cầu 60fps              |
+| `useNativeDriver: true`            | Bỏ qua JS bridge, animation chạy trực tiếp trên UI thread    |
+| **FlatList** + `snapToInterval`    | Native scroll physics, snap mượt, tối ưu memory với windowing |
+| `decelerationRate="fast"`          | Snap chắc chắn, responsive                                    |
+| **AccessibilityInfo**              | Tôn trọng `prefers-reduced-motion` của người dùng             |
+| **StyleSheet** thuần               | Không phụ thuộc thư viện UI bên ngoài                        |
 
-### Now what?
+---
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+## 📄 License
 
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+MIT © ZIM Academy
