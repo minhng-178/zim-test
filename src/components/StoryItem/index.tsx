@@ -29,7 +29,7 @@ interface StoryItemProps {
   isActive: boolean;
   interactionResetCount: number;
   onVideoEnd?: (index: number) => void;
-  isViewable: boolean;
+  isViewable: boolean; // reserved — lazy-load handled by FlatList windowSize
 }
 
 const StoryItem: React.FC<StoryItemProps> = ({
@@ -37,7 +37,6 @@ const StoryItem: React.FC<StoryItemProps> = ({
   index,
   scrollX,
   isActive,
-  isViewable,
   interactionResetCount,
   onVideoEnd,
 }) => {

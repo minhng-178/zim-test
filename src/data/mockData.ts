@@ -1,7 +1,7 @@
 /**
  * mockData.ts
  * Dữ liệu giả lập cho section "Khoảnh khắc đáng nhớ" của ZIM.
- * Sử dụng video public làm mock data (giới hạn 16s trong code).
+ * Video từ Google CDN — hỗ trợ HTTP Range requests, tương thích AVPlayer iOS.
  */
 
 export interface StoryData {
@@ -41,8 +41,7 @@ export const MEMORABLE_MOMENTS_DATA: StoryData[] = [
       'https://www.gstatic.com/webp/gallery/1.webp',
       640,
     ),
-    videoUrl:
-      'https://samplelib.com/mp4/sample-5s-720p.mp4',
+    videoUrl: 'https://res.cloudinary.com/dqqfmuomk/video/upload/v1777524364/sample-5s-720p_zoa6bd.mp4',
     ctaUrl: DEFAULT_CTA_URL,
     title: 'ZIM Academy - 12 Huỳnh Lan Khanh',
     description:
@@ -59,8 +58,7 @@ export const MEMORABLE_MOMENTS_DATA: StoryData[] = [
       'https://www.gstatic.com/webp/gallery/2.webp',
       640,
     ),
-    videoUrl:
-      'https://samplelib.com/mp4/sample-5s-720p.mp4',
+    videoUrl: 'https://res.cloudinary.com/dqqfmuomk/video/upload/v1777524364/sample-5s-720p_zoa6bd.mp4',
     ctaUrl: DEFAULT_CTA_URL,
     title: 'Đoán từ phiên bản Zimians',
     description:
@@ -77,8 +75,7 @@ export const MEMORABLE_MOMENTS_DATA: StoryData[] = [
       'https://www.gstatic.com/webp/gallery/3.webp',
       640,
     ),
-    videoUrl:
-      'https://samplelib.com/mp4/sample-5s-720p.mp4',
+    videoUrl: 'https://res.cloudinary.com/dqqfmuomk/video/upload/v1777524364/sample-5s-720p_zoa6bd.mp4',
     ctaUrl: DEFAULT_CTA_URL,
     title: 'ZIM Story - Hành trình chinh phục',
     description:
@@ -95,8 +92,7 @@ export const MEMORABLE_MOMENTS_DATA: StoryData[] = [
       'https://www.gstatic.com/webp/gallery/4.webp',
       640,
     ),
-    videoUrl:
-      'https://samplelib.com/mp4/sample-5s-720p.mp4',
+    videoUrl: 'https://res.cloudinary.com/dqqfmuomk/video/upload/v1777524364/sample-5s-720p_zoa6bd.mp4',
     ctaUrl: DEFAULT_CTA_URL,
     title: 'ZIM Story - Hành trình chinh phục',
     description:
@@ -113,8 +109,7 @@ export const MEMORABLE_MOMENTS_DATA: StoryData[] = [
       'https://www.gstatic.com/webp/gallery/5.webp',
       640,
     ),
-    videoUrl:
-      'https://samplelib.com/mp4/sample-5s-720p.mp4',
+    videoUrl: 'https://res.cloudinary.com/dqqfmuomk/video/upload/v1777524364/sample-5s-720p_zoa6bd.mp4',
     ctaUrl: DEFAULT_CTA_URL,
     title: 'ZIM Story - Hành trình chinh phục',
     description:

@@ -217,8 +217,9 @@ const MemorableMoments: React.FC = () => {
           // scrollEventThrottle=1 trên iOS để scale animation đủ mượt;
           // tăng lên 16 sẽ gây giật nhẹ khi scroll nhanh
           scrollEventThrottle={Platform.OS === 'ios' ? 1 : 16}
-          // removeClippedSubviews giảm bộ nhớ GPU; có thể gây flicker trên Android cũ
-          removeClippedSubviews
+          // Android: removeClippedSubviews detach native view của item kề ngoài viewport
+          // → item hiển thị trắng. Chỉ bật trên iOS nơi behavior an toàn hơn.
+          removeClippedSubviews={Platform.OS === 'ios'}
           initialNumToRender={3}
           maxToRenderPerBatch={2}
           windowSize={5}

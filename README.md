@@ -154,11 +154,23 @@ zim/
 │   │       └── styles.ts                     # Styles của HomeScreen
 │   └── components/
 │       ├── MemorableMoments/
-│       │   ├── index.tsx                     # Component cha — FlatList Carousel + Pagination Dots
+│       │   ├── index.tsx                     # Component cha — FlatList Carousel + scroll animation
 │       │   └── styles.ts                     # Styles của MemorableMoments
-│       └── StoryItem/
-│           ├── index.tsx                     # Component con — Scale Cover Flow + Reveal Overlay
-│           └── styles.ts                     # Styles của StoryItem
+│       ├── StoryItem/
+│       │   ├── index.tsx                     # Component con — Scale Cover Flow + Reveal Overlay
+│       │   └── styles.ts                     # Styles của StoryItem
+│       ├── VideoLayer/
+│       │   ├── index.tsx                     # Wrapper Video với parallax translateX
+│       │   └── styles.ts                     # Styles của VideoLayer
+│       ├── OverlayLayer/
+│       │   ├── index.tsx                     # Overlay fade + title/description + CTA button
+│       │   └── styles.ts                     # Styles của OverlayLayer
+│       ├── ProgressBar/
+│       │   ├── index.tsx                     # Thanh tiến trình video (translateX animation)
+│       │   └── styles.ts                     # Styles của ProgressBar
+│       └── StoryControls/
+│           ├── index.tsx                     # Nút mute/play với micro-interaction scale
+│           └── styles.ts                     # Styles của StoryControls
 └── README.md
 ```
 
@@ -167,7 +179,7 @@ zim/
 ## 🎨 Tính năng
 
 ### Carousel Cover Flow
-- Item ở giữa **to** (scale = 1.0), item hai bên **nhỏ hơn** (scale ≈ 0.82).
+- Item ở giữa **to** (scale = 1.0), item hai bên **nhỏ hơn** (scale = 0.9).
 - Vuốt ngang để chuyển story, snap từng item mượt mà.
 - Pagination dots ở dưới — dot active kéo rộng bằng `scaleX` (không dùng `width` để tránh reflow).
 

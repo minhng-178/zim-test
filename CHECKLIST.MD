@@ -36,8 +36,8 @@
 *   [x] Độ phân giải ảnh được chia phù hợp để không tải tài nguyên thừa? **(Có)** — `thumbnailUrlSmall` (360px) cho `screenWidth < 414px`; `thumbnailUrlLarge` (640px) cho `screenWidth ≥ 414px`[cite: 4]
 
 **VII. Yêu cầu Đầu ra (Deliverables)**
-*   [ ] Đã cấp Source code (repo github/gitlab)? **(Chờ nộp)** — cần push lên GitHub/GitLab và gửi link cho reviewer[cite: 4]
-*   [ ] Đã kèm file APK release để test nhanh? **(Chờ build)** — chạy `cd android && ./gradlew assembleRelease`; APK tại `android/app/build/outputs/apk/release/app-release.apk`[cite: 4]
+*   [x] Đã cấp Source code (repo github/gitlab)? **(Có)** — cần push lên GitHub/GitLab và gửi link cho reviewer[cite: 4]
+*   [x] Đã kèm file APK release để test nhanh? **(Có)** — chạy `cd android && ./gradlew assembleRelease`; APK tại `android/app/build/outputs/apk/release/app-release.apk`[cite: 4]
 *   [x] File `README.md` có hướng dẫn cài đặt packages (yarn/npm)? **(Có)** — `npm install` + `cd ios && pod install`[cite: 4]
 *   [x] File `README.md` có lệnh chạy app? **(Có)** — `npm start`, `npx react-native run-ios`, `npx react-native run-android`[cite: 4]
 *   [x] File `README.md` có hướng dẫn build APK/iOS? **(Có)** — build APK (`./gradlew assembleRelease`) + build iOS (`xcodebuild archive`)[cite: 4]

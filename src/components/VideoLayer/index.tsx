@@ -40,10 +40,13 @@ const VideoLayer: React.FC<VideoLayerProps> = ({
       muted={isMuted}
       repeat={false}
       progressUpdateInterval={200}
+      playInBackground={false}
+      playWhenInactive={false}
+      ignoreSilentSwitch="ignore"
       onLoad={onLoad}
       onProgress={onProgress}
       onEnd={onEnd}
-      ignoreSilentSwitch="ignore"
+      onError={(e) => console.warn('[VideoLayer] error:', e.error?.errorString ?? e)}
     />
   </Animated.View>
 );
