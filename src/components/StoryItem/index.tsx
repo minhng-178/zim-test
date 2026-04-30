@@ -25,11 +25,10 @@ import {
   Animated,
   Easing,
   Pressable,
-  Text,
   useWindowDimensions,
   View,
 } from 'react-native';
-import Video, { OnProgressData, VideoRef } from 'react-native-video';
+import type { OnLoadData, OnProgressData, VideoRef } from 'react-native-video';
 
 import type { StoryData } from '@/data/mockData';
 import {
@@ -38,7 +37,10 @@ import {
   SNAP_INTERVAL,
 } from '@/lib/constant';
 import styles from './styles';
-import StoryControls from './StoryControls';
+import VideoLayer from '@/components/VideoLayer';
+import OverlayLayer from '@/components/OverlayLayer';
+import ProgressBar from '@/components/ProgressBar';
+import StoryControls from '@/components/StoryControls';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -75,14 +77,21 @@ const StoryItem: React.FC<StoryItemProps> = ({
   interactionResetCount,
   onVideoEnd,
 }) => {
-  const MAX_VIDEO_SECONDS = 16;
+  const DEFAULT_VIDEO_SECONDS = 16;
   // ── 1. Accessibility: Reduce Motion ──────────────────────────────────────
   const [reduceMotion, setReduceMotion] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [isVideoActive, setIsVideoActive] = useState(false);
   const [isPaused, setIsPaused] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const [progressWidth, setProgressWidth] = useState(0);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const thumbnailOpacity = useRef(new Animated.Value(0)).current;
+  const [isThumbnailLoaded, setIsThumbnailLoaded] = useState(false);
+  const autoStartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     // Kiểm tra trạng thái Reduce Motion lúc mount.
@@ -171,7 +180,8 @@ const StoryItem: React.FC<StoryItemProps> = ({
   const endGuardRef = useRef(false);
 
   /** true khi overlay đang hiển thị (sau lần chạm 1). */
-  const isOverlayVisible = useRef(false);
+  const overlayVisibleRef = useRef(false);
+  const [isOverlayVisible, setIsOverlayVisible] = useState(false);
 
   const progressTranslate = progressAnim.interpolate({
     inputRange: [0, 1],
@@ -189,10 +199,11 @@ const StoryItem: React.FC<StoryItemProps> = ({
   });
 
   const showOverlay = useCallback(() => {
-    if (isOverlayVisible.current) {
+    if (overlayVisibleRef.current) {
       return;
     }
-    isOverlayVisible.current = true;
+    overlayVisibleRef.current = true;
+    setIsOverlayVisible(true);
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 1,
@@ -226,7 +237,8 @@ const StoryItem: React.FC<StoryItemProps> = ({
   ]);
 
   const hideOverlay = useCallback(() => {
-    isOverlayVisible.current = false;
+    overlayVisibleRef.current = false;
+    setIsOverlayVisible(false);
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 0,
@@ -246,13 +258,15 @@ const StoryItem: React.FC<StoryItemProps> = ({
     ]).start();
   }, [animDuration, ctaReveal, overlayOpacity, textReveal]);
 
-  const togglePlay = useCallback(() => {
-    setIsPaused(prev => !prev);
-  }, []);
-
-  const toggleMute = useCallback(() => {
-    setIsMuted(prev => !prev);
-  }, []);
+  const handleThumbnailLoad = useCallback(() => {
+    setIsThumbnailLoaded(true);
+    Animated.timing(thumbnailOpacity, {
+      toValue: 1,
+      duration: reduceMotion ? 0 : 260,
+      delay: reduceMotion ? 0 : 120,
+      useNativeDriver: true,
+    }).start();
+  }, [reduceMotion, thumbnailOpacity]);
 
   const handleVideoEnd = useCallback(() => {
     if (!isActive) {
@@ -261,20 +275,30 @@ const StoryItem: React.FC<StoryItemProps> = ({
     videoRef.current?.seek?.(0);
     progressAnim.setValue(0);
     endGuardRef.current = true;
+    setIsVideoActive(false);
+    setIsPaused(true);
+    thumbnailOpacity.setValue(1);
     onVideoEnd?.(index);
   }, [index, isActive, onVideoEnd, progressAnim]);
 
+  const handleVideoLoad = useCallback((data: OnLoadData) => {
+    if (data?.duration && data.duration > 0) {
+      setVideoDuration(data.duration);
+    }
+  }, []);
+
   const handleProgress = useCallback(
     (data: OnProgressData) => {
-      const current = Math.min(data.currentTime, MAX_VIDEO_SECONDS);
-      const ratio = Math.min(current / MAX_VIDEO_SECONDS, 1);
+      const duration = videoDuration ?? DEFAULT_VIDEO_SECONDS;
+      const current = Math.min(data.currentTime, duration);
+      const ratio = duration > 0 ? Math.min(current / duration, 1) : 0;
       progressAnim.setValue(ratio);
 
-      if (data.currentTime >= MAX_VIDEO_SECONDS && !endGuardRef.current) {
+      if (data.currentTime >= duration && !endGuardRef.current) {
         handleVideoEnd();
       }
     },
-    [handleVideoEnd, progressAnim],
+    [handleVideoEnd, progressAnim, videoDuration],
   );
 
   /**
@@ -299,26 +323,104 @@ const StoryItem: React.FC<StoryItemProps> = ({
    */
   useEffect(() => {
     if (!isActive) {
+      setIsVideoActive(false);
+      setIsPaused(true);
+      progressAnim.setValue(0);
+      if (isThumbnailLoaded) {
+        thumbnailOpacity.setValue(1);
+      }
       hideOverlay();
     }
-  }, [isActive, hideOverlay]);
+  }, [
+    isActive,
+    hideOverlay,
+    isThumbnailLoaded,
+    thumbnailOpacity,
+    progressAnim,
+  ]);
 
   useEffect(() => {
-    if (isActive) {
-      setIsPaused(false);
-      endGuardRef.current = false;
-    } else {
+    if (!isActive) {
       setIsPaused(true);
     }
   }, [isActive]);
 
-  const handlePress = useCallback(() => {
-    if (!isOverlayVisible.current) {
-      showOverlay();
-    } else {
-      hideOverlay();
+  useEffect(() => {
+    if (!isActive) {
+      if (autoStartTimeoutRef.current) {
+        clearTimeout(autoStartTimeoutRef.current);
+        autoStartTimeoutRef.current = null;
+      }
+      return;
     }
-  }, [hideOverlay, item.title, showOverlay]);
+    if (isVideoActive) {
+      return;
+    }
+    if (autoStartTimeoutRef.current) {
+      clearTimeout(autoStartTimeoutRef.current);
+    }
+    autoStartTimeoutRef.current = setTimeout(
+      () => {
+        setIsVideoActive(true);
+        setIsPaused(false);
+        endGuardRef.current = false;
+      },
+      reduceMotion ? 0 : 350,
+    );
+    return () => {
+      if (autoStartTimeoutRef.current) {
+        clearTimeout(autoStartTimeoutRef.current);
+        autoStartTimeoutRef.current = null;
+      }
+    };
+  }, [isActive, isVideoActive, reduceMotion]);
+
+  useEffect(() => {
+    if (isVideoActive) {
+      return;
+    }
+    if (isThumbnailLoaded) {
+      thumbnailOpacity.setValue(1);
+    } else {
+      thumbnailOpacity.setValue(0);
+    }
+  }, [isThumbnailLoaded, isVideoActive, thumbnailOpacity]);
+
+  const startVideo = useCallback(() => {
+    if (!isActive) {
+      return;
+    }
+    setIsVideoActive(true);
+    setIsPaused(false);
+    endGuardRef.current = false;
+    hideOverlay();
+  }, [hideOverlay, isActive]);
+
+  const togglePlay = useCallback(() => {
+    if (!isVideoActive) {
+      startVideo();
+      return;
+    }
+    setIsPaused(prev => !prev);
+  }, [isVideoActive, startVideo]);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted(prev => !prev);
+  }, []);
+
+  const handlePress = useCallback(() => {
+    if (!overlayVisibleRef.current) {
+      showOverlay();
+      return;
+    }
+    if (!isVideoActive) {
+      startVideo();
+      return;
+    }
+    hideOverlay();
+  }, [hideOverlay, isVideoActive, showOverlay, startVideo]);
+
+  const shouldRenderVideo = isActive && isVideoActive;
 
   // ── 4. Render ─────────────────────────────────────────────────────────────
   return (
@@ -330,6 +432,7 @@ const StoryItem: React.FC<StoryItemProps> = ({
     <Animated.View
       style={[
         styles.container,
+        shouldRenderVideo && styles.activeBorder,
         {
           transform: [{ perspective: 800 }, { scale }],
         },
@@ -351,88 +454,51 @@ const StoryItem: React.FC<StoryItemProps> = ({
         accessibilityLabel={`Xem story: ${item.title}`}
         accessibilityHint="Chạm lần 1 để xem chi tiết, chạm lần 2 để điều hướng. Vuốt sang để xem story tiếp theo"
       >
-        {/* ── Video nền ── */}
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.video,
-            { transform: [{ translateX: imageTranslateX }] },
-          ]}
-        >
-          <Video
-            ref={videoRef}
-            source={{ uri: item.videoUrl }}
-            style={styles.video}
-            resizeMode="cover"
-            paused={isPaused}
-            muted={isMuted}
-            repeat={false}
-            progressUpdateInterval={200}
+        {/* ── Thumbnail / Video ── */}
+        {shouldRenderVideo ? (
+          <VideoLayer
+            videoRef={videoRef}
+            videoUrl={item.videoUrl}
+            translateX={imageTranslateX}
+            isPaused={isPaused}
+            isMuted={isMuted}
+            onLoad={handleVideoLoad}
             onProgress={handleProgress}
             onEnd={handleVideoEnd}
-            ignoreSilentSwitch="ignore"
           />
-        </Animated.View>
+        ) : (
+          <Animated.Image
+            source={{ uri: item.thumbnailUrl, cache: 'default' }}
+            style={[
+              styles.thumbnail,
+              { opacity: thumbnailOpacity },
+              { transform: [{ translateX: imageTranslateX }] },
+            ]}
+            resizeMode="cover"
+            fadeDuration={200}
+            onLoad={handleThumbnailLoad}
+          />
+        )}
 
         {/* ── Lớp gradient tối nền (luôn hiển thị nhẹ để bảo đảm contrast) ── */}
         <View style={styles.baseGradient} />
 
         {/* ── Overlay Reveal (điều khiển bằng Animated opacity) ── */}
-        <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]}>
-          <View style={styles.overlayScrim} />
-          {/*
-           * Gradient text overlay: nền đen mờ từ dưới lên.
-           * Text trắng trên nền tối đảm bảo contrast ratio >= 4.5:1
-           * theo WCAG 2.1 AA.
-           */}
-          <View style={styles.overlayGradient}>
-            <Animated.View
-              style={{
-                transform: [
-                  { translateX: captionTranslateX },
-                  { translateY: textTranslateY },
-                ],
-                opacity: textReveal,
-              }}
-            >
-              <Text style={styles.overlayTitle} numberOfLines={2}>
-                {item.title}
-              </Text>
-              <Text style={styles.overlayDescription} numberOfLines={3}>
-                {item.description}
-              </Text>
-            </Animated.View>
-            <Animated.View
-              style={{
-                transform: [{ translateY: ctaTranslateY }, { scale: ctaScale }],
-                opacity: ctaReveal,
-              }}
-            >
-              <Pressable
-                style={styles.ctaButton}
-                onPressIn={() => {
-                  Animated.timing(ctaScale, {
-                    toValue: 0.96,
-                    duration: reduceMotion ? 0 : 120,
-                    easing: Easing.out(Easing.cubic),
-                    useNativeDriver: true,
-                  }).start();
-                }}
-                onPressOut={() => {
-                  Animated.timing(ctaScale, {
-                    toValue: 1,
-                    duration: reduceMotion ? 0 : 140,
-                    easing: Easing.out(Easing.cubic),
-                    useNativeDriver: true,
-                  }).start();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={`Xem thêm: ${item.title}`}
-              >
-                <Text style={styles.ctaText}>Xem thêm </Text>
-              </Pressable>
-            </Animated.View>
-          </View>
+        <OverlayLayer
+          overlayOpacity={overlayOpacity}
+          isVisible={isOverlayVisible}
+          captionTranslateX={captionTranslateX}
+          textTranslateY={textTranslateY}
+          textReveal={textReveal}
+          ctaTranslateY={ctaTranslateY}
+          ctaScale={ctaScale}
+          ctaReveal={ctaReveal}
+          title={item.title}
+          description={item.description}
+          reduceMotion={reduceMotion}
+        />
+
+        {(isOverlayVisible || shouldRenderVideo) && (
           <StoryControls
             isMuted={isMuted}
             isPaused={isPaused}
@@ -440,28 +506,17 @@ const StoryItem: React.FC<StoryItemProps> = ({
             onTogglePlay={togglePlay}
             reduceMotion={reduceMotion}
           />
-        </Animated.View>
+        )}
 
-        {/* ── Progress bar (luôn ở top) ── */}
-        <View
-          pointerEvents="none"
-          style={styles.progressTrack}
-          onLayout={event => {
-            setProgressWidth(event.nativeEvent.layout.width);
-          }}
-        >
-          <Animated.View
-            style={[
-              styles.progressFill,
-              {
-                transform: [
-                  { translateX: progressTranslate },
-                  { scaleX: progressAnim },
-                ],
-              },
-            ]}
+        {shouldRenderVideo && (
+          <ProgressBar
+            progressTranslate={progressTranslate}
+            progressAnim={progressAnim}
+            onLayout={event => {
+              setProgressWidth(event.nativeEvent.layout.width);
+            }}
           />
-        </View>
+        )}
       </Pressable>
     </Animated.View>
   );

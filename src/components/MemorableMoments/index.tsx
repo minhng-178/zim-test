@@ -94,12 +94,26 @@ const MemorableMoments: React.FC = () => {
    */
   const activeIndexRef = useRef(initialIndex);
 
-  const handleVideoEnd = useCallback((index: number) => {
-    const nextIndex = (index + 1) % MEMORABLE_MOMENTS_DATA.length;
-    activeIndexRef.current = nextIndex;
-    setActiveIndex(nextIndex);
-    listRef.current?.scrollToIndex({ index: nextIndex, animated: true });
-  }, []);
+  const scrollToCenteredIndex = useCallback(
+    (targetIndex: number, animated: boolean) => {
+      listRef.current?.scrollToIndex({
+        index: targetIndex,
+        animated,
+        viewPosition: 0.5,
+      });
+    },
+    [],
+  );
+
+  const handleVideoEnd = useCallback(
+    (index: number) => {
+      const nextIndex = (index + 1) % MEMORABLE_MOMENTS_DATA.length;
+      activeIndexRef.current = nextIndex;
+      setActiveIndex(nextIndex);
+      scrollToCenteredIndex(nextIndex, true);
+    },
+    [scrollToCenteredIndex],
+  );
 
   /**
    * renderItem: Render từng StoryItem.
@@ -144,19 +158,15 @@ const MemorableMoments: React.FC = () => {
 
   // Padding được tính lại mỗi khi screenWidth thay đổi.
   const horizontalPadding = getHorizontalPadding(screenWidth);
-  const contentPadding = horizontalPadding - ITEM_SPACING / 2;
+  const contentPadding = Math.max(0, horizontalPadding - ITEM_SPACING / 2);
 
   useEffect(() => {
     if (!isListReady) {
       return;
     }
-    listRef.current?.scrollToIndex({
-      index: initialIndex,
-      animated: false,
-      viewPosition: 0.5,
-    });
-    scrollX.setValue(initialIndex * SNAP_INTERVAL);
-  }, [initialIndex, isListReady, scrollX]);
+    scrollToCenteredIndex(activeIndexRef.current, false);
+    scrollX.setValue(activeIndexRef.current * SNAP_INTERVAL);
+  }, [isListReady, scrollToCenteredIndex, screenWidth, scrollX]);
 
   /**
    * onScrollBeginDrag: fire ngay khi ngón tay chạm và bắt đầu kéo.
