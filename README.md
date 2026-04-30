@@ -67,6 +67,76 @@ npx react-native run-android
 
 ---
 
+## 📦 Build APK (Android Release)
+
+> **Lưu ý:** Project dùng React Native CLI thuần — không dùng Expo.
+
+### 1. Tạo keystore (chỉ làm 1 lần)
+
+```bash
+keytool -genkey -v -keystore android/app/zim-release.keystore \
+  -alias zim-key-alias \
+  -keyalg RSA -keysize 2048 -validity 10000
+```
+
+### 2. Cấu hình signing trong `android/gradle.properties`
+
+```properties
+MYAPP_RELEASE_STORE_FILE=zim-release.keystore
+MYAPP_RELEASE_KEY_ALIAS=zim-key-alias
+MYAPP_RELEASE_STORE_PASSWORD=<mật_khẩu_keystore>
+MYAPP_RELEASE_KEY_PASSWORD=<mật_khẩu_key>
+```
+
+### 3. Build APK
+
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+APK đầu ra: `android/app/build/outputs/apk/release/app-release.apk`
+
+### 4. Cài trực tiếp lên thiết bị (tuỳ chọn)
+
+```bash
+adb install android/app/build/outputs/apk/release/app-release.apk
+```
+
+---
+
+## 🍎 Build iOS (Archive & Export)
+
+> **Lưu ý:** Cần Mac + Xcode >= 15.0 + Apple Developer account.
+
+### 1. Cài pods
+
+```bash
+cd ios && pod install && cd ..
+```
+
+### 2. Mở Xcode và archive
+
+```bash
+xed ios
+```
+
+Trong Xcode: **Product → Archive → Distribute App → Ad Hoc / App Store**
+
+### Hoặc dùng lệnh (headless)
+
+```bash
+xcodebuild -workspace ios/zim.xcworkspace \
+  -scheme zim \
+  -configuration Release \
+  -archivePath build/zim.xcarchive \
+  archive
+```
+
+IPA đầu ra nằm trong thư mục `build/` sau bước export.
+
+---
+
 ## 🗂️ Cấu trúc dự án
 
 ```

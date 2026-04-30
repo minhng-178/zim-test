@@ -20,12 +20,25 @@ export default StyleSheet.create({
     pressable: {
         flex: 1,
     },
-    pressableFocused: {
-        borderWidth: 2,
-        borderColor: '#da1e39',
+    containerFocused: {
+        borderWidth: 3,
+        borderColor: '#FFD700',
+        ...Platform.select({
+            android: { elevation: 12 },
+            ios: {
+                shadowColor: '#FFD700',
+                shadowOpacity: 0.6,
+                shadowRadius: 6,
+                shadowOffset: { width: 0, height: 0 },
+            },
+        }),
     },
     thumbnail: {
         ...StyleSheet.absoluteFill,
+    },
+    thumbnailPlaceholder: {
+        ...StyleSheet.absoluteFill,
+        backgroundColor: '#1a1a2e',
     },
     activeBorder: {
         borderWidth: 2,
